@@ -1,5 +1,5 @@
 import { routePaths } from '@core/config'
-import { DraftConfirmModal } from '@shared/components'
+import { ServiceDraftModal } from '@shared/saveDraft'
 import {
   GSTAmendmentSelection,
   GSTAmendmentDetailForm,
@@ -11,12 +11,18 @@ import {
   GSTAmendmentSubmitted,
 } from './index'
 import { getAmendmentConfig } from './amendmentConfigs'
-import { formatGstDateTime } from '@modules/gst/utils/gstFormat'
+import {
+  getCurrentAddressDetails,
+  getCurrentBankDetails,
+  getCurrentContactDetails,
+  getCurrentSignatoryDetails,
+} from '@modules/gst/services/gstProfileDetails'
 import { useGSTAmendmentFlow } from '@modules/gst/hooks/useGSTAmendmentFlow'
 import { buildReviewData } from './gstAmendmentReviewHelpers'
 import './GSTAmendment.css'
 
 export const GSTAmendment = () => {
+  const flow = useGSTAmendmentFlow()
   const {
     navigate,
     gstin,
@@ -25,17 +31,20 @@ export const GSTAmendment = () => {
     setSelectedOption,
     formData,
     setFormData,
+    isReviewing,
+    isEditMode,
+    returnToReview,
     isSubmitting,
     submittedRecord,
-    isModalOpen,
     openDraftModal,
-    handleSaveAndExit,
-    handleDiscardAndExit,
-    handleKeepEditing,
     handleDetailFormSubmit,
+    handleEdit,
+    handleReviewBack,
+    handleFormChange,
+    handleFormSaveDraft,
     handleFinalSubmit,
     handleBackToDashboard,
-  } = useGSTAmendmentFlow()
+  } = flow
 
   if (submittedRecord) {
     const sectionTitle = selectedOption
@@ -45,17 +54,16 @@ export const GSTAmendment = () => {
     return (
       <GSTAmendmentSubmitted
         arnNumber={submittedRecord.reference}
-        submissionDateText={formatGstDateTime(submittedRecord.createdAt)}
+        submissionDateText={new Date(submittedRecord.createdAt).toLocaleDateString('en-US')}
         requestedSection={sectionTitle}
-        onTrackAmendment={() =>
-          navigate(routePaths.gst.track(submittedRecord.reference))
-        }
-        onOpenMyApplications={handleBackToDashboard}
+        gstin={gstin || '29AAAAA0000F1Z2'}
+        onTrackAmendment={() => navigate(routePaths.applications)}
+        onGoToDashboard={handleBackToDashboard}
       />
     )
   }
 
-  if (selectedOption && formData) {
+  if (selectedOption && isReviewing && formData) {
     const config = getAmendmentConfig(selectedOption.id, selectedOption.title)
 
     const reviewData = buildReviewData(selectedOption, formData, gstin, config.title)
@@ -80,17 +88,12 @@ export const GSTAmendment = () => {
           fileSizeText={reviewData.fileSizeText}
           uploadDateText={`Uploaded on ${new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`}
           isSubmitting={isSubmitting}
-          onBack={() => setFormData(null)}
+          onBack={handleReviewBack}
+          onEdit={handleEdit}
           onSubmit={handleFinalSubmit}
           onSaveDraft={openDraftModal}
         />
-        <DraftConfirmModal
-          isOpen={isModalOpen}
-          serviceTitle="GST Amendment"
-          onSaveAndExit={handleSaveAndExit}
-          onDiscardAndExit={handleDiscardAndExit}
-          onKeepEditing={handleKeepEditing}
-        />
+        <ServiceDraftModal draft={flow} serviceTitle="GST Amendment" />
       </div>
     )
   }
@@ -101,36 +104,73 @@ export const GSTAmendment = () => {
     const isAddressType =
       selectedOption.id === 'principal_place' || selectedOption.id === 'additional_place'
 
+    const handleFormBack = () => {
+      if (isEditMode) {
+        returnToReview()
+      } else {
+        setSelectedOption(null)
+        setFormData(null)
+      }
+    }
+
     return (
       <div className="gst-amendment-page">
         {selectedOption.id === 'bank_accounts' ? (
           <GSTBankAccountsForm
+            currentDetails={getCurrentBankDetails()}
+            initialBankDetails={formData?.bankDetails}
+            initialFile={formData?.file}
+            initialFileName={formData?.fileName}
+            initialFileSize={formData?.fileSizeText}
             isSubmitting={isSubmitting}
-            onBack={() => setSelectedOption(null)}
+            isEditMode={isEditMode}
+            onBack={handleFormBack}
             onSubmit={handleDetailFormSubmit}
-            onSaveDraft={openDraftModal}
+            onSaveDraft={handleFormSaveDraft}
+            onChange={handleFormChange}
           />
         ) : selectedOption.id === 'authorised_signatories' ? (
           <GSTSignatoriesForm
+            currentDetails={getCurrentSignatoryDetails()}
+            initialSignatoryDetails={formData?.signatoryDetails}
+            initialFile={formData?.file}
+            initialFileName={formData?.fileName}
+            initialFileSize={formData?.fileSizeText}
             isSubmitting={isSubmitting}
-            onBack={() => setSelectedOption(null)}
+            isEditMode={isEditMode}
+            onBack={handleFormBack}
             onSubmit={handleDetailFormSubmit}
-            onSaveDraft={openDraftModal}
+            onSaveDraft={handleFormSaveDraft}
+            onChange={handleFormChange}
           />
         ) : selectedOption.id === 'contact_details' ? (
           <GSTContactDetailsForm
+            currentDetails={getCurrentContactDetails()}
+            initialContactDetails={formData?.contactDetails}
+            initialFile={formData?.file}
+            initialFileName={formData?.fileName}
+            initialFileSize={formData?.fileSizeText}
             isSubmitting={isSubmitting}
-            onBack={() => setSelectedOption(null)}
+            isEditMode={isEditMode}
+            onBack={handleFormBack}
             onSubmit={handleDetailFormSubmit}
-            onSaveDraft={openDraftModal}
+            onSaveDraft={handleFormSaveDraft}
+            onChange={handleFormChange}
           />
         ) : isAddressType ? (
           <GSTAmendmentAddressForm
             title={config.title}
+            currentDetails={getCurrentAddressDetails(selectedOption.id === 'additional_place')}
+            initialDetails={formData?.addressDetails}
+            initialFile={formData?.file}
+            initialFileName={formData?.fileName}
+            initialFileSize={formData?.fileSizeText}
             isSubmitting={isSubmitting}
-            onBack={() => setSelectedOption(null)}
+            isEditMode={isEditMode}
+            onBack={handleFormBack}
             onSubmit={handleDetailFormSubmit}
-            onSaveDraft={openDraftModal}
+            onSaveDraft={handleFormSaveDraft}
+            onChange={handleFormChange}
           />
         ) : (
           <GSTAmendmentDetailForm
@@ -139,19 +179,19 @@ export const GSTAmendment = () => {
             inputLabel={config.inputLabel}
             placeholder={config.placeholder}
             proofs={config.proofs}
+            initialValue={formData?.newValue}
+            initialFile={formData?.file}
+            initialFileName={formData?.fileName}
+            initialFileSize={formData?.fileSizeText}
             isSubmitting={isSubmitting}
-            onBack={() => setSelectedOption(null)}
+            isEditMode={isEditMode}
+            onBack={handleFormBack}
             onSubmit={handleDetailFormSubmit}
-            onSaveDraft={openDraftModal}
+            onSaveDraft={handleFormSaveDraft}
+            onChange={handleFormChange}
           />
         )}
-        <DraftConfirmModal
-          isOpen={isModalOpen}
-          serviceTitle="GST Amendment"
-          onSaveAndExit={handleSaveAndExit}
-          onDiscardAndExit={handleDiscardAndExit}
-          onKeepEditing={handleKeepEditing}
-        />
+        <ServiceDraftModal draft={flow} serviceTitle="GST Amendment" />
       </div>
     )
   }
@@ -165,14 +205,9 @@ export const GSTAmendment = () => {
           setSelectedOption(option)
           window.scrollTo({ top: 0, behavior: 'smooth' })
         }}
+        onSaveDraft={openDraftModal}
       />
-      <DraftConfirmModal
-        isOpen={isModalOpen}
-        serviceTitle="GST Amendment"
-        onSaveAndExit={handleSaveAndExit}
-        onDiscardAndExit={handleDiscardAndExit}
-        onKeepEditing={handleKeepEditing}
-      />
+      <ServiceDraftModal draft={flow} serviceTitle="GST Amendment" />
     </div>
   )
 }

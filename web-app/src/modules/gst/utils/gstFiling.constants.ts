@@ -1,7 +1,7 @@
 import type { FilingPeriodData } from '@modules/gst/components/GSTFiling'
 import { GST_FEES } from '@modules/gst/constants/gstBusiness.constants'
 import { gstProfileService } from '@modules/gst/services/gstProfileService'
-import { FINANCIAL_YEAR_OPTIONS, MONTHLY_PERIOD_OPTIONS } from '@modules/gst/utils/gstPeriodOptions'
+import { CURRENT_FINANCIAL_YEAR, FINANCIAL_YEAR_OPTIONS } from '@modules/gst/utils/gstPeriodOptions'
 
 /** Fresh filing data, prefilled from the user's GST profile and the latest period */
 export const getDefaultFilingData = (): FilingPeriodData => {
@@ -9,13 +9,16 @@ export const getDefaultFilingData = (): FilingPeriodData => {
   return {
     gstin: profile.gstin,
     businessName: profile.tradeName || profile.legalName,
-    financialYear: FINANCIAL_YEAR_OPTIONS[0]?.value || '',
+    financialYear: CURRENT_FINANCIAL_YEAR || FINANCIAL_YEAR_OPTIONS[0]?.value || '',
     frequency: 'Monthly',
-    selectedMonth: MONTHLY_PERIOD_OPTIONS[0]?.value || '',
-    returnType: 'combo',
-    baseFee: GST_FEES.filingCombo,
+    selectedMonth: '',
+    returnType: 'gstr1',
+    baseFee: GST_FEES.filingGstr1,
     filingType: 'regular',
     calculationMethod: 'ca_calculate',
+    estimatedSales: '',
+    estimatedPurchases: '',
+    estimatedItc: '',
   }
 }
 

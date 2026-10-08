@@ -1,0 +1,142 @@
+/* ==========================================================================
+   GST Cancellation Stepper - 2-Step Connected Circular Stepper
+   ========================================================================== */
+
+.gst-canc-stepper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin: 0 auto 1.75rem auto;
+  padding: 0 0.5rem;
+  box-sizing: border-box;
+}
+
+.gst-canc-stepper__track {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 480px;
+}
+
+.gst-canc-stepper__item-wrapper {
+  display: flex;
+  align-items: center;
+  flex: 1;
+}
+
+.gst-canc-stepper__item-wrapper:last-child {
+  flex: 0 0 auto;
+}
+
+.gst-canc-stepper__step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: default;
+  position: relative;
+  z-index: 2;
+  user-select: none;
+}
+
+.gst-canc-stepper__step--completed,
+.gst-canc-stepper__step--current {
+  cursor: pointer;
+}
+
+.gst-canc-stepper__circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  font-weight: 800;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+  user-select: none;
+}
+
+/* Pending Step */
+.gst-canc-stepper__step--pending .gst-canc-stepper__circle {
+  background-color: var(--surface);
+  color: var(--muted-text);
+  border: 2px solid var(--grey-300);
+}
+
+.gst-canc-stepper__step--pending .gst-canc-stepper__label {
+  color: var(--secondary-text);
+  font-weight: 600;
+}
+
+/* Current Active Step (Orange) */
+.gst-canc-stepper__step--current .gst-canc-stepper__circle {
+  background-color: var(--primary-orange);
+  color: var(--surface);
+  border: 2.5px solid var(--primary-orange);
+  box-shadow: 0 4px 14px rgba(249, 115, 22, 0.42);
+  transform: scale(1.06);
+}
+
+.gst-canc-stepper__step--current .gst-canc-stepper__label {
+  color: var(--palette-orange-600);
+  font-weight: 700;
+}
+
+/* Completed Step */
+.gst-canc-stepper__step--completed .gst-canc-stepper__circle {
+  background-color: var(--primary-navy);
+  color: var(--surface);
+  border: 2.5px solid var(--primary-navy);
+  box-shadow: 0 4px 14px rgba(8, 59, 117, 0.35);
+}
+
+.gst-canc-stepper__step--completed .gst-canc-stepper__label {
+  color: var(--primary-navy);
+  font-weight: 600;
+}
+
+.gst-canc-stepper__check-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.gst-canc-stepper__label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: center;
+  letter-spacing: -0.01em;
+}
+
+.gst-canc-stepper__line {
+  flex: 1;
+  height: 2.5px;
+  background-color: var(--border);
+  margin: 0 1rem;
+  margin-bottom: 1.45rem; /* Aligns horizontally with the center of the 40px circle */
+  transition: background-color 0.3s ease;
+  z-index: 1;
+}
+
+.gst-canc-stepper__line--completed {
+  background-color: var(--primary-navy);
+}
+
+@media (max-width: 480px) {
+  .gst-canc-stepper__track {
+    max-width: 100%;
+  }
+
+  .gst-canc-stepper__line {
+    margin: 0 0.5rem;
+    margin-bottom: 1.45rem;
+  }
+}

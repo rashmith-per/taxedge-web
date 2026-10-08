@@ -1,3 +1,4 @@
+import { viewUploadedDocument } from '@shared/upload'
 import { GSTStepErrorBanner } from '@modules/gst/shared/GSTStepErrorBanner'
 import { formatGstFileSize } from '@modules/gst/utils/gstFile'
 import React, { useState } from 'react'
@@ -19,6 +20,7 @@ export interface GSTFilingDocumentsProps {
   frequency?: string
   uploadedFiles?: Record<string, UploadedFileInfo>
   notApplicableDocs?: Record<string, boolean>
+  isEditMode?: boolean
   onFileUpload?: (id: string, file: File) => void
   onFileRemove?: (id: string) => void
   onToggleNotApplicable?: (id: string) => void
@@ -125,6 +127,7 @@ export const GSTFilingDocuments: React.FC<GSTFilingDocumentsProps> = ({
   selectedMonth,
   uploadedFiles: externalUploadedFiles,
   notApplicableDocs: externalNotApplicableDocs,
+  isEditMode = false,
   onFileUpload: externalOnFileUpload,
   onFileRemove: externalOnFileRemove,
   onStepClick,
@@ -197,13 +200,6 @@ export const GSTFilingDocuments: React.FC<GSTFilingDocumentsProps> = ({
 
   return (
     <div className="gst-docs-page">
-      {/* Stepper */}
-      <div className="gst-docs-top-bar">
-        <div className="gst-docs-stepper-wrap">
-          <GSTFilingStepper currentStep={2} onStepClick={onStepClick} />
-        </div>
-      </div>
-
       {/* Main Page Header */}
       <header className="gst-docs-header">
         <h1 className="gst-docs-title">Filing Documents</h1>
@@ -211,6 +207,13 @@ export const GSTFilingDocuments: React.FC<GSTFilingDocumentsProps> = ({
           Upload the required documents for your GST return for {periodShort}. Clear invoices ensure 100% accurate Input Tax Credit (ITC) claim.
         </p>
       </header>
+
+      {/* Stepper */}
+      <div className="gst-docs-top-bar">
+        <div className="gst-docs-stepper-wrap">
+          <GSTFilingStepper currentStep={2} onStepClick={onStepClick} />
+        </div>
+      </div>
 
       {/* Modern Progress Tracker matching Image 2 */}
       <DocumentTracker
@@ -247,13 +250,9 @@ export const GSTFilingDocuments: React.FC<GSTFilingDocumentsProps> = ({
                   fileSize={fileInfo?.sizeText}
                   onUpload={handleFileUpload}
                   onRemove={handleFileRemove}
-                  onView={() => {
-                    if (fileInfo?.fileUrl) {
-                      window.open(fileInfo.fileUrl, '_blank')
-                    } else {
-                      alert(`Viewing ${fileInfo?.name || item.title}`)
-                    }
-                  }}
+                  onView={(doc) =>
+                    viewUploadedDocument({ id: doc.id, title: item.title, fileName: fileInfo?.name, file: doc.file, fileUrl: fileInfo?.fileUrl })
+                  }
                 />
               )
             })}
@@ -281,7 +280,7 @@ export const GSTFilingDocuments: React.FC<GSTFilingDocumentsProps> = ({
         onBack={onBack}
         onNext={handleNext}
         onSaveDraft={onSaveDraft}
-        nextLabel="Continue"
+        isEditMode={isEditMode}
       />
     </div>
   )

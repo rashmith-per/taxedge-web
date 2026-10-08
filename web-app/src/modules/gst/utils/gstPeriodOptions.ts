@@ -3,7 +3,6 @@ export interface SelectOption {
   label: string
 }
 
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 const toOption = (value: string): SelectOption => ({ value, label: value })
 
 /** Indian financial year (April–March) that contains the given date, as its starting year */
@@ -13,8 +12,16 @@ const fyLabel = (startYear: number): string => `FY ${startYear}-${String(startYe
 const today = new Date()
 const currentFyStart = fyStartYear(today)
 
-/** Current and two previous financial years */
-export const FINANCIAL_YEAR_OPTIONS: SelectOption[] = [0, 1, 2].map((back) => toOption(fyLabel(currentFyStart - back)))
+export const GST_START_YEAR = 2017
+export const GST_END_YEAR = 2027
+
+export const CURRENT_FINANCIAL_YEAR = fyLabel(currentFyStart)
+
+/** Financial years from GST inception (FY 2017-18) up to FY 2027-28 */
+export const FINANCIAL_YEAR_OPTIONS: SelectOption[] = Array.from(
+  { length: GST_END_YEAR - GST_START_YEAR + 1 },
+  (_, index) => toOption(fyLabel(GST_START_YEAR + index))
+)
 
 export const FILING_FREQUENCY_OPTIONS = [
   { id: 'Monthly', label: 'Monthly' },
@@ -22,19 +29,31 @@ export const FILING_FREQUENCY_OPTIONS = [
   { id: 'Annual', label: 'Annual' },
 ]
 
-/** Last five completed months (a return is filed for the previous month) */
-export const MONTHLY_PERIOD_OPTIONS: SelectOption[] = [1, 2, 3, 4, 5].map((back) => {
-  const d = new Date(today.getFullYear(), today.getMonth() - back, 1)
-  return toOption(`${MONTHS[d.getMonth()]} ${d.getFullYear()}`)
-})
+export const MONTHS = [
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
+] as const
 
-/** Four quarters of the current financial year */
+/** All 12 months of the year without mentioning the year */
+export const MONTHLY_PERIOD_OPTIONS: SelectOption[] = MONTHS.map((month) => toOption(month))
+
+/** Four quarters of the financial year */
 export const QUARTERLY_PERIOD_OPTIONS: SelectOption[] = [
-  ['Quarter 1', 'Apr', 'Jun', 0],
-  ['Quarter 2', 'Jul', 'Sep', 0],
-  ['Quarter 3', 'Oct', 'Dec', 0],
-  ['Quarter 4', 'Jan', 'Mar', 1],
-].map(([name, from, to, offset]) => toOption(`${name} (${from} - ${to} ${currentFyStart + Number(offset)})`))
+  ['Quarter 1', 'Apr', 'Jun'],
+  ['Quarter 2', 'Jul', 'Sep'],
+  ['Quarter 3', 'Oct', 'Dec'],
+  ['Quarter 4', 'Jan', 'Mar'],
+].map(([name, from, to]) => toOption(`${name} (${from} - ${to})`))
 
 /** Annual returns for the current and previous financial year */
 export const ANNUAL_PERIOD_OPTIONS: SelectOption[] = [0, 1].map((back) => toOption(`${fyLabel(currentFyStart - back)} Annual Return`))
@@ -45,11 +64,8 @@ export const RETURN_PERIOD_OPTIONS: SelectOption[] = [
 ]
 
 export const RETURN_TYPE_OPTIONS: SelectOption[] = [
-  { value: 'combo', label: 'GSTR-1 & GSTR-3B (Combo)' },
   { value: 'gstr1', label: 'GSTR-1 (Outward Supplies)' },
   { value: 'gstr3b', label: 'GSTR-3B (Monthly Summary)' },
-  { value: 'gstr4', label: 'GSTR-4 (Composition Scheme)' },
-  { value: 'cmp08', label: 'CMP-08 (Quarterly Statement)' },
 ]
 
 export const FILING_TYPE_OPTIONS = [

@@ -1,3 +1,5 @@
+import { CANONICAL_INDIAN_STATES_AND_UTS } from '@shared/services/indianStates'
+
 export const CONSTITUTION_OF_BUSINESS_OPTIONS = [
   'Proprietorship',
   'Partnership',
@@ -48,44 +50,7 @@ export const PLACE_OF_BUSINESS_OPTIONS = [
   'Others',
 ]
 
-export const INDIAN_STATES_AND_UTS = [
-  'Andhra Pradesh',
-  'Arunachal Pradesh',
-  'Assam',
-  'Bihar',
-  'Chhattisgarh',
-  'Goa',
-  'Gujarat',
-  'Haryana',
-  'Himachal Pradesh',
-  'Jharkhand',
-  'Karnataka',
-  'Kerala',
-  'Madhya Pradesh',
-  'Maharashtra',
-  'Manipur',
-  'Meghalaya',
-  'Mizoram',
-  'Nagaland',
-  'Odisha',
-  'Punjab',
-  'Rajasthan',
-  'Sikkim',
-  'Tamil Nadu',
-  'Telangana',
-  'Tripura',
-  'Uttar Pradesh',
-  'Uttarakhand',
-  'West Bengal',
-  'Andaman and Nicobar Islands',
-  'Chandigarh',
-  'Dadra and Nagar Haveli and Daman and Diu',
-  'Delhi',
-  'Jammu and Kashmir',
-  'Ladakh',
-  'Lakshadweep',
-  'Puducherry',
-]
+export const INDIAN_STATES_AND_UTS = CANONICAL_INDIAN_STATES_AND_UTS
 
 /** GST state codes (first two digits of a GSTIN) */
 export const GST_STATE_CODES: Record<string, string> = {
@@ -102,3 +67,11 @@ export const GST_STATE_CODES: Record<string, string> = {
 
 /** State name for a GSTIN, from its first two digits */
 export const stateFromGstin = (gstin: string): string => GST_STATE_CODES[gstin.slice(0, 2)] || ''
+
+export const BANK_ACCOUNT_TYPE_OPTIONS = [
+  'Current',
+  'Savings',
+  'Cash Credit',
+  'Overdraft',
+  'Others',
+] as const

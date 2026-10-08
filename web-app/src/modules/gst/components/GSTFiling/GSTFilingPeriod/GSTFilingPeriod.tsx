@@ -9,6 +9,7 @@ import { GSTFilingFrequency } from './GSTFilingFrequency'
 import { GSTFilingTypeSelector } from './GSTFilingTypeSelector'
 import { GSTPeriodFields } from './GSTPeriodFields'
 import {
+  CURRENT_FINANCIAL_YEAR,
   FINANCIAL_YEAR_OPTIONS,
   MONTHLY_PERIOD_OPTIONS,
   QUARTERLY_PERIOD_OPTIONS,
@@ -24,14 +25,18 @@ export interface FilingPeriodData {
   financialYear: string
   frequency: string
   selectedMonth: string
-  returnType: 'combo' | 'gstr1' | 'nil' | ''
+  returnType: 'gstr1' | 'gstr3b' | 'nil' | ''
   baseFee: number
   filingType?: 'regular' | 'nil' | ''
   calculationMethod?: 'ca_calculate' | 'estimated_figures' | ''
+  estimatedSales?: string
+  estimatedPurchases?: string
+  estimatedItc?: string
 }
 
 interface GSTFilingPeriodProps {
   initialData?: Partial<FilingPeriodData>
+  isEditMode?: boolean
   onStepClick?: (step: number) => void
   onContinue: (data: FilingPeriodData) => void
   onCancel: () => void
@@ -42,6 +47,7 @@ interface GSTFilingPeriodProps {
 
 export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
   initialData,
+  isEditMode = false,
   onStepClick,
   onContinue,
   onCancel,
@@ -49,15 +55,20 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
   onDraftChange,
 }) => {
   const profile = useMemo(() => gstProfileService.get(), [])
-  const [financialYear, setFinancialYear] = useState(initialData?.financialYear || FINANCIAL_YEAR_OPTIONS[0]?.value || '')
+  const [financialYear, setFinancialYear] = useState(
+    initialData?.financialYear || CURRENT_FINANCIAL_YEAR || FINANCIAL_YEAR_OPTIONS[0]?.value || ''
+  )
   const [frequency, setFrequency] = useState(initialData?.frequency || 'Monthly')
-  const [returnPeriod, setReturnPeriod] = useState(initialData?.selectedMonth || MONTHLY_PERIOD_OPTIONS[0]?.value || '')
+  const [returnPeriod, setReturnPeriod] = useState(initialData?.selectedMonth || '')
   const [gstin, setGstin] = useState(initialData?.gstin || '')
-  const [returnType, setReturnType] = useState<string>(initialData?.returnType || 'combo')
+  const [returnType, setReturnType] = useState<string>(initialData?.returnType || 'gstr1')
   const [filingType, setFilingType] = useState<'regular' | 'nil' | ''>(initialData?.filingType || 'regular')
   const [calculationMethod, setCalculationMethod] = useState<'ca_calculate' | 'estimated_figures' | ''>(
     initialData?.calculationMethod || 'ca_calculate'
   )
+  const [estimatedSales, setEstimatedSales] = useState(initialData?.estimatedSales || '')
+  const [estimatedPurchases, setEstimatedPurchases] = useState(initialData?.estimatedPurchases || '')
+  const [estimatedItc, setEstimatedItc] = useState(initialData?.estimatedItc || '')
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [stepError, setStepError] = useState<string | null>(null)
 
@@ -89,12 +100,15 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
       financialYear,
       frequency,
       selectedMonth: returnPeriod,
-      returnType: (filingType === 'nil' ? 'nil' : (returnType as FilingPeriodData['returnType'])) || 'combo',
+      returnType: (filingType === 'nil' ? 'nil' : (returnType as FilingPeriodData['returnType'])) || 'gstr1',
       baseFee: getFilingBaseFee(filingType, returnType),
       filingType,
       calculationMethod,
+      estimatedSales,
+      estimatedPurchases,
+      estimatedItc,
     }),
-    [gstin, initialData?.businessName, profile, financialYear, frequency, returnPeriod, filingType, returnType, calculationMethod]
+    [gstin, initialData?.businessName, profile, financialYear, frequency, returnPeriod, filingType, returnType, calculationMethod, estimatedSales, estimatedPurchases, estimatedItc]
   )
 
   useEffect(() => {
@@ -127,9 +141,6 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
 
   return (
     <div className="gst-filing-period-container">
-      {/* Step Progress Stepper */}
-      <GSTFilingStepper currentStep={1} onStepClick={onStepClick} />
-
       {/* Main Page Title and Subtitle */}
       <header className="gst-filing-period__header">
         <h1 className="gst-filing-period__title">GST Filing Period</h1>
@@ -137,6 +148,9 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
           Provide the filing details to proceed with your GST return.
         </p>
       </header>
+
+      {/* Step Progress Stepper */}
+      <GSTFilingStepper currentStep={1} onStepClick={onStepClick} />
 
       {/* Main Content Form */}
       <div className="gst-filing-period__card">
@@ -187,6 +201,12 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
                   handleClearError('calculationMethod')
                 }}
                 error={errors.calculationMethod}
+                estimatedSales={estimatedSales}
+                onSalesChange={setEstimatedSales}
+                estimatedPurchases={estimatedPurchases}
+                onPurchasesChange={setEstimatedPurchases}
+                estimatedItc={estimatedItc}
+                onItcChange={setEstimatedItc}
               />
             )}
           </div>
@@ -200,6 +220,7 @@ export const GSTFilingPeriod: React.FC<GSTFilingPeriodProps> = ({
             onBack={onCancel}
             onSaveDraft={onSaveDraft}
             nextType="submit"
+            isEditMode={isEditMode}
           />
         </form>
       </div>

@@ -1,17 +1,30 @@
 import React from 'react'
 import { TAX_CALCULATION_METHOD_OPTIONS } from '@modules/gst/utils/gstPeriodOptions'
+import { gstInput } from '@modules/gst/utils/gstInputFormatters'
 import './GSTCalculationMethod.css'
 
 interface GSTCalculationMethodProps {
   value: 'ca_calculate' | 'estimated_figures' | ''
   onChange: (value: 'ca_calculate' | 'estimated_figures') => void
   error?: string
+  estimatedSales?: string
+  onSalesChange?: (value: string) => void
+  estimatedPurchases?: string
+  onPurchasesChange?: (value: string) => void
+  estimatedItc?: string
+  onItcChange?: (value: string) => void
 }
 
 export const GSTCalculationMethod: React.FC<GSTCalculationMethodProps> = ({
   value,
   onChange,
   error,
+  estimatedSales = '',
+  onSalesChange,
+  estimatedPurchases = '',
+  onPurchasesChange,
+  estimatedItc = '',
+  onItcChange,
 }) => {
   return (
     <div className="gst-calc-method">
@@ -51,6 +64,56 @@ export const GSTCalculationMethod: React.FC<GSTCalculationMethodProps> = ({
           )
         })}
       </div>
+
+      {value === 'estimated_figures' && (
+        <div className="gst-calc-method__estimated-card">
+          <div className="gst-calc-method__field">
+            <label htmlFor="gst-est-sales" className="gst-calc-method__field-label">
+              Estimated Taxable Sales (₹)
+            </label>
+            <input
+              id="gst-est-sales"
+              type="text"
+              inputMode="numeric"
+              className="gst-calc-method__input"
+              placeholder="Enter sales amount"
+              value={estimatedSales}
+              onChange={(e) => onSalesChange?.(gstInput.amount(e.target.value))}
+            />
+          </div>
+
+          <div className="gst-calc-method__field">
+            <label htmlFor="gst-est-purchases" className="gst-calc-method__field-label">
+              Estimated Taxable Purchases (₹)
+            </label>
+            <input
+              id="gst-est-purchases"
+              type="text"
+              inputMode="numeric"
+              className="gst-calc-method__input"
+              placeholder="Enter purchases amount"
+              value={estimatedPurchases}
+              onChange={(e) => onPurchasesChange?.(gstInput.amount(e.target.value))}
+            />
+          </div>
+
+          <div className="gst-calc-method__field">
+            <label htmlFor="gst-est-itc" className="gst-calc-method__field-label">
+              Estimated Eligible ITC (₹)
+            </label>
+            <input
+              id="gst-est-itc"
+              type="text"
+              inputMode="numeric"
+              className="gst-calc-method__input"
+              placeholder="Enter eligible ITC amount"
+              value={estimatedItc}
+              onChange={(e) => onItcChange?.(gstInput.amount(e.target.value))}
+            />
+          </div>
+        </div>
+      )}
+
       {error && <span className="gst-calc-method__error">{error}</span>}
     </div>
   )

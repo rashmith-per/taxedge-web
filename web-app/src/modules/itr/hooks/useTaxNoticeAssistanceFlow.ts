@@ -1,12 +1,13 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { routePaths } from '@core/config/routePaths'
-import { useAuthStore, useAppStore } from '@store/index'
+import { useAuthStore } from '@store/index'
 import { userStorage } from '@core/storage/userStorage'
-import { useDraftBlocker } from '@shared/hooks'
+import { useServiceDraft, readServiceDraft, DRAFT_NAMESPACES } from '@shared/saveDraft'
 import type { NoticeFormData } from '../types/taxNoticeAssistance.types'
 
 export const DRAFT_SERVICE_ID = 'tax-notice-assistance'
+const TOTAL_STEPS = 5
 
 export const INITIAL_NOTICE_FORM_DATA: NoticeFormData = {
   pan: '',
@@ -50,28 +51,20 @@ export const getNoticeStepLabel = (stepNum: number): string => {
 export const useTaxNoticeAssistanceFlow = () => {
   const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
-  const pushToast = useAppStore((state) => state.pushToast)
 
-  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(1)
+  // Resume a saved / auto-saved draft (restored on first render, no effect needed)
+  const [existingDraft] = useState(() => readServiceDraft<NoticeFormData>(DRAFT_SERVICE_ID, DRAFT_NAMESPACES.itr))
+  const [step, setStep] = useState<1 | 2 | 3 | 4 | 5 | 6>(() => {
+    const draftStep = existingDraft?.currentStep
+    return draftStep && draftStep >= 1 && draftStep <= TOTAL_STEPS ? (draftStep as 1 | 2 | 3 | 4 | 5) : 1
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState<NoticeFormData>(INITIAL_NOTICE_FORM_DATA)
-
-  useEffect(() => {
-    try {
-      const existingDraft = userStorage.getDraft(DRAFT_SERVICE_ID)
-      if (existingDraft?.formData) {
-        setFormData((prev) => ({
-          ...prev,
-          ...(existingDraft.formData as Partial<NoticeFormData>),
-        }))
-        if (existingDraft.currentStep && existingDraft.currentStep <= 5) {
-          setStep(existingDraft.currentStep as 1 | 2 | 3 | 4 | 5)
-        }
-      }
-    } catch {
-      // No-op
-    }
-  }, [])
+  const [formData, setFormData] = useState<NoticeFormData>(() => ({
+    ...INITIAL_NOTICE_FORM_DATA,
+    ...existingDraft?.formData,
+    // A File cannot be stored; the user re-attaches the notice after resuming
+    documentFile: null,
+  }))
 
   const handleUpdateFormData = (patch: Partial<NoticeFormData>) => {
     try {
@@ -81,55 +74,44 @@ export const useTaxNoticeAssistanceFlow = () => {
     }
   }
 
-  const handleSaveDraft = useCallback(() => {
-    try {
-      userStorage.saveDraft({
-        serviceId: DRAFT_SERVICE_ID,
-        serviceTitle: 'Tax Notice Assistance',
-        currentStep: step,
-        totalSteps: 5,
-        stepLabel: getNoticeStepLabel(step),
-        formData: {
-          ...formData,
-          documentFile: null,
-        },
-        savedAt: new Date().toLocaleDateString('en-IN', {
-          day: 'numeric',
-          month: 'short',
-          year: 'numeric',
-        }),
-        savedTimestamp: Date.now(),
-        resumeRoute: routePaths.itr.taxNoticeAssistance,
-      })
-    } catch {
-      // No-op
-    }
-  }, [step, formData])
+  const isDirty = Boolean(
+    step > 1 ||
+    formData.pan.trim() !== '' ||
+    formData.assessmentYear.trim() !== '' ||
+    formData.noticeType.trim() !== '' ||
+    formData.noticeReference.trim() !== '' ||
+    formData.noticeDate.trim() !== '' ||
+    formData.responseDueDate.trim() !== '' ||
+    formData.explanation.trim() !== '' ||
+    formData.documentFileName !== '' ||
+    Object.keys(formData.supportingDocuments || {}).length > 0 ||
+    (formData.remarks ?? '').trim() !== ''
+  )
 
-  useEffect(() => {
-    if (step > 1 && step <= 5) {
-      handleSaveDraft()
-    }
-  }, [step, formData, handleSaveDraft])
-
-  const shouldBlock = step > 1 && step <= 5
+  // Same draft behaviour as loans and GST: auto-save, save / discard dialog, browser Back prompt
   const {
-    isModalOpen,
-    openModal,
+    isDraftModalOpen: isModalOpen,
+    openDraftModal: openModal,
+    clearDraft,
     handleSaveAndExit,
     handleDiscardAndExit,
     handleKeepEditing,
-  } = useDraftBlocker({
-    shouldBlock,
-    onSaveDraft: () => {
-      handleSaveDraft()
-      pushToast('Tax Notice Application saved as draft', 'success')
+  } = useServiceDraft<NoticeFormData>({
+    serviceId: DRAFT_SERVICE_ID,
+    serviceTitle: 'Tax Notice Assistance',
+    totalSteps: TOTAL_STEPS,
+    currentStep: Math.min(step, TOTAL_STEPS),
+    stepLabel: getNoticeStepLabel(step),
+    resumeRoute: routePaths.itr.taxNoticeAssistance,
+    exitRoute: routePaths.itr.root,
+    formData: { ...formData, documentFile: null },
+    hasEnteredData: isDirty,
+    isComplete: step > TOTAL_STEPS,
+    storageNamespace: DRAFT_NAMESPACES.itr,
+    onDiscard: () => {
+      setStep(1)
+      setFormData(INITIAL_NOTICE_FORM_DATA)
     },
-    onDiscardDraft: () => {
-      userStorage.deleteDraft(DRAFT_SERVICE_ID)
-      pushToast('Draft discarded', 'info')
-    },
-    defaultExitRoute: routePaths.itr.root,
   })
 
   const handleSaveDraftAndExit = () => {
@@ -149,7 +131,11 @@ export const useTaxNoticeAssistanceFlow = () => {
         return
       }
       if (step === 1) {
-        openModal()
+        if (isDirty) {
+          openModal()
+        } else {
+          navigate(routePaths.itr.root)
+        }
         return
       }
       navigate(routePaths.itr.root)
@@ -183,7 +169,7 @@ export const useTaxNoticeAssistanceFlow = () => {
         to: `/applications/track/${applicationCode}`,
       })
 
-      userStorage.deleteDraft(DRAFT_SERVICE_ID)
+      clearDraft()
 
       setFormData((prev) => ({
         ...prev,
@@ -216,5 +202,6 @@ export const useTaxNoticeAssistanceFlow = () => {
     handleSaveAndExit,
     handleDiscardAndExit,
     handleKeepEditing,
+    isDirty,
   }
 }

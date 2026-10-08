@@ -13,6 +13,7 @@ import {
   getAadhaarError,
   getPanHolderCode,
   isKnownPanHolderType,
+  isValidVerhoeff,
 } from './identityValidation'
 
 export {
@@ -66,12 +67,18 @@ export const validateEmail = (email: string, label = 'Email address'): string | 
  * Exactly 10 digits and must start with 6, 7, 8, or 9
  */
 export const isValidMobile = (value: string): boolean => {
-  const digits = (value || '').replace(/\D/g, '').trim()
+  let digits = (value || '').replace(/\D/g, '').trim()
+  if (digits.length === 12 && digits.startsWith('91')) {
+    digits = digits.slice(2)
+  }
   return /^[6-9]\d{9}$/.test(digits)
 }
 
 export const validateMobileNumber = (mobile: string, label = 'Mobile number'): string | null => {
-  const digits = (mobile || '').replace(/\D/g, '').trim()
+  let digits = (mobile || '').replace(/\D/g, '').trim()
+  if (digits.length === 12 && digits.startsWith('91')) {
+    digits = digits.slice(2)
+  }
   if (!digits) {
     return `${label} is required`
   }
@@ -91,7 +98,7 @@ export const validateMobileNumber = (mobile: string, label = 'Mobile number'): s
  */
 export const isValidIfsc = (ifsc: string): boolean => {
   const trimmed = ifsc.trim().toUpperCase()
-  return /^[A-Z]{4}0[A-Z0-9]{6}$/.test(trimmed)
+  return REGEX.ifsc.test(trimmed)
 }
 
 export const validateIfsc = (ifsc: string, label = 'IFSC code'): string | null => {
@@ -110,7 +117,7 @@ export const validateIfsc = (ifsc: string, label = 'IFSC code'): string | null =
  */
 export const isValidBankAccNumber = (acc: string): boolean => {
   const digits = (acc || '').replace(/\D/g, '').trim()
-  return digits.length >= 9 && digits.length <= 18
+  return REGEX.bankAcc.test(digits)
 }
 
 export const validateBankAccNumber = (acc: string, label = 'Bank account number'): string | null => {
@@ -360,6 +367,9 @@ export const validateAadhaar = (aadhaar: string, label = 'Aadhaar number'): stri
   if (formatError) {
     return formatError
   }
+  if (!isValidVerhoeff(digits)) {
+    return 'Invalid Aadhaar check digit'
+  }
   if (/^(\d)\1{11}$/.test(digits)) {
     return 'Enter a valid 12-digit Aadhaar number'
   }
@@ -378,7 +388,7 @@ export const isNonEmpty = (value: string | null | undefined): boolean => Boolean
  * Validates a required field with friendly error copy
  */
 export const validateRequired = (
-  value: string | number | null | undefined,
+  value: unknown,
   fieldLabel = 'This field'
 ): string | null => {
   if (value === null || value === undefined) {
@@ -393,7 +403,7 @@ export const validateRequired = (
 /**
  * Validates multiple required fields in an object, returning an errors map.
  */
-export const validateRequiredFields = <T extends Record<string, any>>(
+export const validateRequiredFields = <T extends Record<string, unknown>>(
   values: T,
   fieldLabels: Partial<Record<keyof T, string>>
 ): { isValid: boolean; errors: Partial<Record<keyof T, string>> } => {

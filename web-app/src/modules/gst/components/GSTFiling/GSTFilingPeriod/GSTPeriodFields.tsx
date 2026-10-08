@@ -91,23 +91,22 @@ export const GSTPeriodFields: React.FC<GSTPeriodFieldsProps> = ({
           Filing Period / Return Period *
         </label>
         <div className="gst-filing-period__select-wrap">
-          <input
+          <select
             id="gst-return-period"
-            type="text"
-            list="gst-period-options"
-            className="gst-filing-period__input"
-            placeholder="Select or enter filing period"
+            className={`gst-filing-period__select ${!returnPeriod ? 'gst-filing-period__select--placeholder' : ''}`}
             value={returnPeriod}
             onChange={(e) => {
               setReturnPeriod(e.target.value)
               handleClearError('returnPeriod')
             }}
-          />
-          <datalist id="gst-period-options">
+          >
+            <option value="">Select or enter filing period</option>
             {periodOptions.map((opt) => (
-              <option key={opt.value} value={opt.value} />
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
             ))}
-          </datalist>
+          </select>
           <ChevronDown />
         </div>
         {errors.returnPeriod && (

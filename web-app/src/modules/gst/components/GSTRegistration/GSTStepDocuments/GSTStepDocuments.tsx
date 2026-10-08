@@ -7,7 +7,7 @@ import { GSTDocCard } from './GSTDocCard'
 import { GSTDocPreviewModal } from './GSTDocPreviewModal'
 import { SecurityShieldIcon } from '@modules/gst/shared/GSTDocIcons/GSTDocIcons'
 import { StepActionBar } from '@shared/components'
-import { DOCUMENT_UPLOAD_RULE, PHOTO_UPLOAD_RULE, acceptAttributeFor } from '@shared/utils'
+import { FileInput, PHOTO_UPLOAD_RULE } from '@shared/upload'
 import './GSTStepDocuments.css'
 
 export type { GSTStepDocumentsProps, UploadedDoc } from '@modules/gst/types/gstDocuments.types'
@@ -20,6 +20,7 @@ const SECTION_CONFIG: Array<{ key: DocumentCategory; title: string }> = [
 
 export const GSTStepDocuments: FC<GSTStepDocumentsProps> = ({
   initialDocuments,
+  isEditMode = false,
   onDocumentsChange,
   onBack,
   onNext,
@@ -39,6 +40,8 @@ export const GSTStepDocuments: FC<GSTStepDocumentsProps> = ({
     handleTriggerUpload,
     handleTriggerCamera,
     handleFileSelected,
+    handleUploadRejected,
+    activeUploadRule,
     handleDirectUpload,
     handleDelete,
     handleStartReplace,
@@ -52,21 +55,21 @@ export const GSTStepDocuments: FC<GSTStepDocumentsProps> = ({
   return (
     <div className="gst-docs-page">
       {/* Hidden inputs for document file picker & mobile camera capture */}
-      <input
-        type="file"
+      <FileInput
         ref={fileInputRef}
         hidden
-        accept={acceptAttributeFor(DOCUMENT_UPLOAD_RULE)}
-        onChange={handleFileSelected}
+        rule={activeUploadRule}
+        onFileSelected={handleFileSelected}
+        onFileError={(message) => handleUploadRejected(null, message)}
         aria-label="Upload document file"
       />
-      <input
-        type="file"
+      <FileInput
         ref={cameraInputRef}
         hidden
-        accept={acceptAttributeFor(PHOTO_UPLOAD_RULE)}
+        rule={PHOTO_UPLOAD_RULE}
         capture="environment"
-        onChange={handleFileSelected}
+        onFileSelected={handleFileSelected}
+        onFileError={(message) => handleUploadRejected(null, message)}
         aria-label="Capture document via camera"
       />
 
@@ -90,6 +93,7 @@ export const GSTStepDocuments: FC<GSTStepDocumentsProps> = ({
                 onTriggerCamera={handleTriggerCamera}
                 onTriggerUpload={handleTriggerUpload}
                 onDirectUpload={handleDirectUpload}
+                onUploadError={handleUploadRejected}
                 onStartReplace={handleStartReplace}
                 onCancelReplace={handleCancelReplace}
                 onDelete={handleDelete}
@@ -119,7 +123,7 @@ export const GSTStepDocuments: FC<GSTStepDocumentsProps> = ({
         onBack={onBack}
         onSaveDraft={onSaveDraft}
         onNext={() => handleProceed(onNext)}
-        nextLabel="Continue"
+        isEditMode={isEditMode}
       />
 
       {/* Document Preview Modal */}

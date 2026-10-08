@@ -27,6 +27,7 @@ import {
   Wallet,
 } from 'lucide-react'
 import type { TdsProfile, TdsBankDetails, TdsIncomeTaxData } from '../types/tdsRefund.types'
+import { errorTracker } from '@core/errors'
 
 const createCustomSvgIcon =
   (src: string, defaultSize = 20): React.FC<{ size?: number; width?: number; height?: number; color?: string; className?: string }> =>
@@ -81,7 +82,18 @@ export const EMPTY_PROFILE: TdsProfile = {
   defaultBankName: '',
 }
 
-export const DEFAULT_TDS_TAXPAYER = EMPTY_PROFILE
+export const DEFAULT_TDS_TAXPAYER: TdsProfile = {
+  ...EMPTY_PROFILE,
+  name: 'Sagu',
+  fullName: 'Sagu',
+  pan: 'ABCDE5478Q',
+  aadhaar: '123456783690',
+  dob: '2000-01-29',
+  mobile: '+91 70081 38785',
+  email: 'sagu@gmail.com',
+  address: 'Nlr\nNellore, Assam - 523142',
+  defaultAccountHolder: 'Sagu',
+}
 export type TdsTaxpayerProfile = TdsProfile
 
 export const EMPTY_BANK: TdsBankDetails = {
@@ -99,11 +111,11 @@ export const EMPTY_TAX: TdsIncomeTaxData = {
   salaryIncome: '',
   otherIncome: '',
   interestIncome: '',
-  rentalIncome: null,
-  capitalGains: null,
-  businessIncome: null,
-  homeLoanInterest: null,
-  taxDeductions: null,
+  rentalIncome: 'no',
+  capitalGains: 'no',
+  businessIncome: 'no',
+  homeLoanInterest: 'no',
+  taxDeductions: 'no',
   annualRent: '',
   propertyTaxes: '',
   stcg: '',
@@ -171,7 +183,7 @@ export const HOW_IT_WORKS_STEPS: HowItWorksStep[] = [
   { stepNumber: 1, title: 'Submit Details', icon: 'edit' },
   { stepNumber: 2, title: 'Upload Documents', icon: 'upload' },
   { stepNumber: 3, title: 'Executive Verification', icon: 'verification' },
-  { stepNumber: 4, title: 'Refund Filing', icon: 'filing' },
+  { stepNumber: 4, title: 'Payment', icon: 'filing' },
   { stepNumber: 5, title: 'Refund Credited', icon: 'credit' },
 ]
 
@@ -201,6 +213,7 @@ export const TdsIcons = {
   User,
   Building,
   Briefcase,
+  Wallet,
   Percent,
   TrendingUp,
   ChevronRight,
@@ -224,22 +237,20 @@ export interface TdsDocumentConfig {
   title: string
   subtitle: string
   required: boolean
-  accept: string
-  maxSizeMb: number
   bgColor: string
   iconColor: string
 }
 
 export const TDS_DOCUMENTS: TdsDocumentConfig[] = [
-  { id: 'pan', title: 'PAN', subtitle: 'Permanent Account Number Card · up to 5MB', required: true, accept: '.pdf,.jpg,.jpeg,.png', maxSizeMb: 5, bgColor: '#e0f2fe', iconColor: '#0284c7' },
-  { id: 'form16', title: 'Form 16 (Part A & B)', subtitle: 'TDS Certificate issued by employer · up to 10MB', required: true, accept: '.pdf', maxSizeMb: 10, bgColor: '#ffe4e6', iconColor: '#e11d48' },
-  { id: 'form16a', title: 'Form 16A', subtitle: 'Non-salary TDS Certificate from banks/others · up to 10MB', required: false, accept: '.pdf', maxSizeMb: 10, bgColor: '#f3e8ff', iconColor: '#9333ea' },
-  { id: 'ais', title: 'AIS', subtitle: 'Annual Information Statement from IT Portal · up to 10MB', required: true, accept: '.pdf,.json', maxSizeMb: 10, bgColor: '#e0f2fe', iconColor: '#0284c7' },
-  { id: 'tis', title: 'TIS', subtitle: 'Taxpayer Information Summary · up to 25MB', required: false, accept: '.pdf', maxSizeMb: 25, bgColor: '#dcfce7', iconColor: '#16a34a' },
-  { id: 'bankStatements', title: 'Bank Statements', subtitle: 'Last 6–12 months bank statements · up to 25MB', required: true, accept: '.pdf', maxSizeMb: 25, bgColor: '#fef3c7', iconColor: '#d97706' },
-  { id: 'previousItr', title: 'Previous ITR', subtitle: 'Previous assessment year filed acknowledgement · up to 10MB', required: false, accept: '.pdf', maxSizeMb: 10, bgColor: '#e0e7ff', iconColor: '#6366f1' },
-  { id: 'tdsCertificates', title: 'TDS Certificates', subtitle: 'Form 16B/16C or other deduction proofs · up to 10MB', required: true, accept: '.pdf', maxSizeMb: 10, bgColor: '#dcfce7', iconColor: '#16a34a' },
-  { id: 'supportingDocs', title: 'Supporting Income Documents', subtitle: 'Interest certificates, capital gain sheets · up to 15MB', required: false, accept: '.pdf,.xlsx,.csv', maxSizeMb: 15, bgColor: '#ffedd5', iconColor: '#ea580c' },
+  { id: 'pan', title: 'PAN', subtitle: 'Permanent Account Number Card', required: true, bgColor: '#e0f2fe', iconColor: '#0284c7' },
+  { id: 'form16', title: 'Form 16 (Part A & B)', subtitle: 'TDS Certificate issued by employer', required: true, bgColor: '#ffe4e6', iconColor: '#e11d48' },
+  { id: 'form16a', title: 'Form 16A', subtitle: 'Non-salary TDS Certificate from banks/others', required: false, bgColor: '#f3e8ff', iconColor: '#9333ea' },
+  { id: 'ais', title: 'AIS', subtitle: 'Annual Information Statement from IT Portal', required: true, bgColor: '#e0f2fe', iconColor: '#0284c7' },
+  { id: 'tis', title: 'TIS', subtitle: 'Taxpayer Information Summary', required: false, bgColor: '#dcfce7', iconColor: '#16a34a' },
+  { id: 'bankStatements', title: 'Bank Statements', subtitle: 'Last 6–12 months bank statements', required: true, bgColor: '#fef3c7', iconColor: '#d97706' },
+  { id: 'previousItr', title: 'Previous ITR', subtitle: 'Previous assessment year filed acknowledgement', required: false, bgColor: '#e0e7ff', iconColor: '#6366f1' },
+  { id: 'tdsCertificates', title: 'TDS Certificates', subtitle: 'Form 16B/16C or other deduction proofs', required: true, bgColor: '#dcfce7', iconColor: '#16a34a' },
+  { id: 'supportingDocs', title: 'Supporting Income Documents', subtitle: 'Interest certificates, capital gain sheets', required: false, bgColor: '#ffedd5', iconColor: '#ea580c' },
 ]
 
 export const DocIcons: Record<string, React.FC<{ color?: string }>> = {
@@ -254,27 +265,62 @@ export const DocIcons: Record<string, React.FC<{ color?: string }>> = {
   supportingDocs: ({ color }) => React.createElement(Wallet, { size: 22, color }),
 }
 
-export interface IfscDetails {
-  bankName: string
-  branch: string
+export interface UserLike {
+  fullName?: string
+  name?: string
+  pan?: string
+  aadhaar?: string
+  dob?: string
+  mobile?: string
+  email?: string
+  address?: string
+  addressLine1?: string
+  addressLine2?: string
+  city?: string
+  state?: string
+  pincode?: string
 }
 
-export const fetchIfscDetails = async (ifsc: string): Promise<IfscDetails | null> => {
+export const syncProfileWithAuthUser = (
+  current: TdsTaxpayerProfile,
+  user?: UserLike | null
+): { profile: TdsTaxpayerProfile; hasChanges: boolean } => {
   try {
-    const code = ifsc.toUpperCase().trim()
-    if (code.length !== 11) return null
-    const res = await fetch(`https://ifsc.razorpay.com/${code}`)
-    if (!res.ok) return null
-    const data = await res.json()
-    if (data && data.BANK && data.BRANCH) {
-      return {
-        bankName: String(data.BANK),
-        branch: String(data.BRANCH),
-      }
+    if (!user) return { profile: current, hasChanges: false }
+
+    const addressParts = [
+      user.addressLine1,
+      user.addressLine2,
+      user.city,
+      user.state,
+      user.pincode,
+    ].filter(Boolean)
+    const formattedAddress = addressParts.length > 0 ? addressParts.join(', ') : user.address || ''
+
+    const cleanMobile = user.mobile
+      ? (user.mobile.startsWith('+91') ? user.mobile : `+91 ${user.mobile}`)
+      : ''
+
+    const sourceMap: Partial<TdsTaxpayerProfile> = {
+      fullName: user.fullName || user.name,
+      name: user.name || user.fullName,
+      pan: user.pan ? user.pan.toUpperCase() : undefined,
+      aadhaar: user.aadhaar ? user.aadhaar.replace(/\D/g, '').slice(0, 12) : undefined,
+      dob: user.dob,
+      mobile: cleanMobile || undefined,
+      email: user.email,
+      address: formattedAddress || undefined,
     }
-    return null
-  } catch {
-    return null
+
+    // Fill only the fields the taxpayer has not entered yet
+    const fills = (Object.entries(sourceMap) as [keyof TdsTaxpayerProfile, string | undefined][])
+      .filter(([key, val]) => !current[key] && val)
+    const next: TdsTaxpayerProfile = { ...current, ...Object.fromEntries(fills) }
+
+    return { profile: next, hasChanges: fills.length > 0 }
+  } catch (error) {
+    errorTracker.captureException(error, { tags: { area: 'tds-profile-sync' } })
+    return { profile: current, hasChanges: false }
   }
 }
 

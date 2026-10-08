@@ -76,13 +76,6 @@ export const renderItrServiceCard = (
       <hr className="itr-service-card__divider" />
 
       <div className="itr-service-card__footer">
-        <div className="itr-service-card__price-box">
-          <span className="itr-service-card__price">{service.pricing}</span>
-          <span className="itr-service-card__timeline">
-            <ClockIcon size={13} strokeWidth={2.2} /> {service.timeline}
-          </span>
-        </div>
-
         <button
           type="button"
           className="itr-service-card__start-btn"

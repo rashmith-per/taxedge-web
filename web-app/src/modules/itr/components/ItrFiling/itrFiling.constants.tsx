@@ -1,6 +1,7 @@
 import React from 'react'
 import { authStorage } from '@core/auth/authStorage'
 import type { AuthUser } from '@core/auth/authTypes'
+import './ItrStepHeaderStepper.css'
 import {
   ArrowRight as ArrowRightIcon, CreditCard as BankCardIcon, Calculator as CalculatorIcon,
   Calendar as CalendarIcon, CheckCircle2 as CheckCircleIcon, Check as CheckIcon,
@@ -156,6 +157,7 @@ export interface UploadedDocInfo {
   fileName: string
   fileSize: string
   uploadedAt: string
+  file?: File
 }
 
 export interface ChecklistDocConfig {
@@ -186,6 +188,9 @@ export const ITR_STEPS = [
   { id: 4, label: 'Document Checklist' },
   { id: 5, label: 'Review & File' },
 ]
+
+/** Step each review section's "Edit" opens */
+export const ITR_REVIEW_EDIT_STEPS = { taxpayer: 1, documents: 4 } as const
 
 export const ITR_STEP_LABELS = ['Personal & Filing Info', 'Income Sources', 'Regime & Deductions', 'Document Checklist', 'Review & File']
 

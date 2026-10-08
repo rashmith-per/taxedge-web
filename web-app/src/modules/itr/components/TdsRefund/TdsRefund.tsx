@@ -1,5 +1,9 @@
 import React from 'react'
-import { DraftConfirmModal, PaymentCheckout } from '@shared/components'
+import { useNavigate } from 'react-router-dom'
+import { routePaths } from '@core/config/routePaths'
+import { PaymentCheckout } from '@shared/components'
+import { ServiceDraftModal } from '@shared/saveDraft'
+import { useReviewEdit } from '@shared/edit'
 import { TdsRefundOverview, TdsRefundProgressTracker } from './TdsRefundOverview'
 import { TdsRefundCustomerIncome } from './TdsRefundCustomerIncome'
 import { TdsRefundDocuments } from './TdsRefundDocuments'
@@ -8,7 +12,11 @@ import { TdsRefundStatus } from './TdsRefundStatus'
 import { useTdsRefundFlow } from '../../hooks/useTdsRefundFlow'
 import './TdsRefund.css'
 
+const REVIEW_STEP = 3
+
 export const TdsRefund: React.FC = () => {
+  const navigate = useNavigate()
+  const flow = useTdsRefundFlow()
   const {
     user,
     tdsRef,
@@ -22,20 +30,28 @@ export const TdsRefund: React.FC = () => {
     setTaxData,
     uploads,
     setUploads,
-    isModalOpen,
     openModal,
-    handleSaveAndExit,
-    handleDiscardAndExit,
-    handleKeepEditing,
     handleFinishSubmission,
-  } = useTdsRefundFlow()
+    isDirty,
+  } = flow
+
+  // "Edit" from the review: the step shows "Update & Review" and Continue / Back return to the review
+  const reviewEdit = useReviewEdit(() => setCurrentStep(REVIEW_STEP))
+  const { isEditMode, nextOrReview, backOrReview } = reviewEdit
 
   const stageRenderers: Record<number, () => React.ReactNode> = {
     0: () => <TdsRefundOverview onStart={() => setCurrentStep(1)} />,
     1: () => (
       <TdsRefundCustomerIncome
-        onBack={() => setCurrentStep(0)}
-        onNext={() => setCurrentStep(2)}
+        onBack={backOrReview(() => {
+          if (isDirty) {
+            openModal()
+          } else {
+            setCurrentStep(0)
+          }
+        })}
+        onNext={nextOrReview(() => setCurrentStep(2))}
+        isEditMode={isEditMode}
         onSaveDraft={openModal}
         currentStep={1}
         initialProfile={profile}
@@ -48,8 +64,9 @@ export const TdsRefund: React.FC = () => {
     ),
     2: () => (
       <TdsRefundDocuments
-        onBack={() => setCurrentStep(1)}
-        onNext={() => setCurrentStep(3)}
+        onBack={backOrReview(() => setCurrentStep(1))}
+        onNext={nextOrReview(() => setCurrentStep(REVIEW_STEP))}
+        isEditMode={isEditMode}
         onSaveDraft={openModal}
         initialUploads={uploads}
         onUploadsChange={setUploads}
@@ -58,8 +75,8 @@ export const TdsRefund: React.FC = () => {
     3: () => (
       <TdsRefundReview
         onBack={() => setCurrentStep(2)}
-        onEditStep1={() => setCurrentStep(1)}
-        onEditStep2={() => setCurrentStep(2)}
+        onEditStep1={() => reviewEdit.startEdit(() => setCurrentStep(1))}
+        onEditStep2={() => reviewEdit.startEdit(() => setCurrentStep(2))}
         onNext={() => setCurrentStep(4)}
         onSaveDraft={openModal}
         profile={profile}
@@ -86,8 +103,9 @@ export const TdsRefund: React.FC = () => {
     5: () => (
       <TdsRefundStatus
         applicationId={tdsRef}
-        onBack={() => setCurrentStep(4)}
-        onBackToDashboard={() => setCurrentStep(0)}
+        appliedDate={new Date().toISOString()}
+        assessmentYear={(profile.assessmentYear || '2025-26').replace(/^AY\s*/i, '')}
+        onBackToDashboard={() => navigate(routePaths.dashboard)}
       />
     ),
   }
@@ -104,13 +122,7 @@ export const TdsRefund: React.FC = () => {
   return (
     <>
       {renderCurrentStage()}
-      <DraftConfirmModal
-        isOpen={isModalOpen}
-        serviceTitle="TDS refund"
-        onSaveAndExit={handleSaveAndExit}
-        onDiscardAndExit={handleDiscardAndExit}
-        onKeepEditing={handleKeepEditing}
-      />
+      <ServiceDraftModal draft={flow} serviceTitle="TDS refund" />
     </>
   )
 }

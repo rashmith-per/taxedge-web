@@ -1,5 +1,7 @@
+import { formatUploadSize } from '@shared/upload'
 import React from 'react'
 import { StepActionBar, DocumentSection, UploadDocument } from '@shared/components'
+import { viewUploadedDocument } from '@shared/upload'
 import {
   type UploadedDocInfo,
   type ChecklistDocConfig,
@@ -16,6 +18,8 @@ export interface ItrDocumentsChecklistViewProps {
   onBack: () => void
   onNext: () => void
   onSaveDraft?: () => void
+  /** Opened with "Edit" from the review: the main button reads "Update & Review" */
+  isEditMode?: boolean
   uploadedDocs: Record<string, UploadedDocInfo>
   onUploadDoc: (docId: string, doc: UploadedDocInfo) => void
   onRemoveDoc: (docId: string) => void
@@ -25,6 +29,7 @@ export const ItrDocumentsChecklistView: React.FC<ItrDocumentsChecklistViewProps>
   onBack,
   onNext,
   onSaveDraft,
+  isEditMode = false,
   uploadedDocs,
   onUploadDoc,
   onRemoveDoc,
@@ -35,12 +40,12 @@ export const ItrDocumentsChecklistView: React.FC<ItrDocumentsChecklistViewProps>
 
   const handleFileUpload = (docId: string, file: File) => {
     try {
-      const sizeMb = (file.size / (1024 * 1024)).toFixed(2)
       onUploadDoc(docId, {
         id: docId,
         fileName: file.name,
-        fileSize: `${sizeMb} MB`,
+        fileSize: formatUploadSize(file.size),
         uploadedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        file,
       })
     } catch {
       // Fallback
@@ -61,10 +66,18 @@ export const ItrDocumentsChecklistView: React.FC<ItrDocumentsChecklistViewProps>
         subtitle={doc.desc}
         isRequired={Boolean(doc.isMandatory)}
         icon={<doc.Icon />}
-        accept=".pdf,.jpg,.jpeg,.png"
         isUploaded={Boolean(uploaded)}
         fileName={uploaded?.fileName}
         fileSize={uploaded?.fileSize}
+        file={uploaded?.file}
+        onView={(d) => {
+          viewUploadedDocument({
+            id: d.id,
+            title: d.title,
+            fileName: d.fileName || uploaded?.fileName,
+            file: d.file || uploaded?.file,
+          })
+        }}
         onUpload={(id, file) => handleFileUpload(id, file)}
         onRemove={(id) => onRemoveDoc(id)}
       />
@@ -116,6 +129,7 @@ export const ItrDocumentsChecklistView: React.FC<ItrDocumentsChecklistViewProps>
         onBack={onBack}
         onNext={onNext}
         onSaveDraft={onSaveDraft}
+        isEditMode={isEditMode}
         backLabel="Back"
         nextLabel="Continue"
         nextDisabled={!isDocumentsValid}

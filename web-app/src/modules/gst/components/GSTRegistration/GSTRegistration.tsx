@@ -1,6 +1,6 @@
 import { routePaths } from '@core/config'
 import { GST_FEES } from '@modules/gst/constants/gstBusiness.constants'
-import { DraftConfirmModal } from '@shared/components'
+import { ServiceDraftModal } from '@shared/saveDraft'
 import { GSTStepBusiness } from './GSTStepBusiness/GSTStepBusiness'
 import { GSTStepDocuments } from './GSTStepDocuments/GSTStepDocuments'
 import { GSTStepReview } from './GSTStepReview/GSTStepReview'
@@ -11,21 +11,21 @@ import { useGstRegistrationState } from '@modules/gst/hooks/useGstRegistrationSt
 import './GSTRegistration.css'
 
 export const GSTRegistration = () => {
+  const flow = useGstRegistrationState()
   const {
     currentStep,
     businessData,
     documents,
     paymentResult,
     applicationRef,
-    isDraftModalOpen,
     openDraftModal,
     handleCancel,
-    handleSaveAndExit,
-    handleDiscardAndExit,
-    handleKeepEditing,
     handleBusinessChange,
     setDocuments,
     goToStep,
+    isEditMode,
+    editSection,
+    startEditingFromReview,
     handleStep1Next,
     handleStep2Back,
     handleStep2Next,
@@ -34,7 +34,7 @@ export const GSTRegistration = () => {
     handleStep4Back,
     handlePaymentSuccess,
     navigate,
-  } = useGstRegistrationState()
+  } = flow
 
   const getHeaderTitle = () => {
     switch (currentStep) {
@@ -91,6 +91,8 @@ export const GSTRegistration = () => {
             {currentStep === 1 && (
               <GSTStepBusiness
                 data={businessData}
+                isEditMode={isEditMode}
+                focusSection={editSection}
                 onChange={handleBusinessChange}
                 onNext={handleStep1Next}
                 onCancel={handleCancel}
@@ -101,6 +103,7 @@ export const GSTRegistration = () => {
             {currentStep === 2 && (
               <GSTStepDocuments
                 initialDocuments={documents}
+                isEditMode={isEditMode}
                 onDocumentsChange={setDocuments}
                 onBack={handleStep2Back}
                 onNext={handleStep2Next}
@@ -112,7 +115,7 @@ export const GSTRegistration = () => {
               <GSTStepReview
                 businessData={businessData}
                 documents={documents}
-                onEdit={() => goToStep(1)}
+                onEdit={(section) => startEditingFromReview(section === 'documents' ? 2 : 1, section ?? null)}
                 onBack={handleStep3Back}
                 onProceed={handleStep3Proceed}
                 onSaveDraft={openDraftModal}
@@ -145,13 +148,7 @@ export const GSTRegistration = () => {
       )}
 
       {/* Save Application Progress Confirmation Popup on Leaving */}
-      <DraftConfirmModal
-        isOpen={isDraftModalOpen}
-        serviceTitle="GST registration"
-        onSaveAndExit={handleSaveAndExit}
-        onDiscardAndExit={handleDiscardAndExit}
-        onKeepEditing={handleKeepEditing}
-      />
+      <ServiceDraftModal draft={flow} serviceTitle="GST registration" />
     </div>
   )
 }
